@@ -8,7 +8,14 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
+	<Grid>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="8*"/>
+			<ColumnDefinition Width="367*"/>
+		</Grid.ColumnDefinitions>
+		<ListBox x:Name="listBox" Grid.ColumnSpan="2">
+			<TextBlock x:Name="cpuUsageText" TextWrapping="Wrap" Text="TextBlock"/>
+		</ListBox>
 
-    </Grid>
+	</Grid>
 </Page>
