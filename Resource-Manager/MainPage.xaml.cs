@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.ServiceModel.Channels;
 using System.Threading;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
@@ -25,13 +27,18 @@ namespace Resource_Manager
 
 	public sealed partial class MainPage : Page
 	{
+		[DllImport("kernel32.dll")]
+		extern static bool Beep(uint dwFreq, uint dwDuration);
+		[DllImport("user32.dll")]
+		private static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
+
 		private DispatcherTimer timer;
 		private int cpuCount;
-		private SystemCpuUsageReport prevCpuReport=SystemDiagnosticInfo.GetForCurrentSystem().CpuUsage.GetReport();
+		private SystemCpuUsageReport prevCpuReport = SystemDiagnosticInfo.GetForCurrentSystem().CpuUsage.GetReport();
 
 		public MainPage()
 		{
-			this.InitializeComponent();
+			InitializeComponent();
 			cpuUsageText.Text = "now:0";
 		}
 
@@ -50,19 +57,16 @@ namespace Resource_Manager
 			cpuCount++;
 			var CpuReport = SystemDiagnosticInfo.GetForCurrentSystem().CpuUsage.GetReport();
 			var MemReport = SystemDiagnosticInfo.GetForCurrentSystem().MemoryUsage.GetReport();
-			var kernel= CpuReport.KernelTime - prevCpuReport.KernelTime;
+			var kernel = CpuReport.KernelTime - prevCpuReport.KernelTime;
 			var user = CpuReport.UserTime - prevCpuReport.UserTime;
 			var idle = CpuReport.IdleTime - prevCpuReport.IdleTime;
 			var cpuUsage = "user:" + user + " kernel:" + kernel + " idle:" + idle;
 			prevCpuReport = CpuReport;
 			var memUsage = "commited:" + FormatBytesToString(MemReport.CommittedSizeInBytes) + " avail:" + FormatBytesToString(MemReport.AvailableSizeInBytes) + " total:" + FormatBytesToString(MemReport.TotalPhysicalSizeInBytes);
 
-			cpuUsageText.Text = "now:" + cpuCount.ToString() + "\nCPU:" + cpuUsage + "\nMEM:" + memUsage + "\nCPU%"+((user+kernel)/(user+kernel+idle));
-			
-		}
-		void getCpuFrequency(){
-			var cpu = new Windows.System.ProcessorArchitecture();
-			var report = ProcessDiagnosticInfo.GetForCurrentProcess().CpuUsage.GetReport();
+			cpuUsageText.Text = "now:" + cpuCount.ToString() + "\nCPU:" + cpuUsage + "\nMEM:" + memUsage + "\nCPU%" + ((user + kernel) / (user + kernel + idle));
+			Beep(1000, 100);
+			//MessageBox((IntPtr)null, "test", "caption", 0);
 		}
 
 		string FormatBytesToString(ulong bytes)
@@ -75,7 +79,7 @@ namespace Resource_Manager
 				number = number / 1024;
 				counter++;
 			}
-			
+
 			return string.Format("{0:n1}{1}", number, suffixes[counter]);
 		}
 	}
