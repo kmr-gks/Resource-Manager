@@ -4,10 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ResourceUsageMonitor"
+        xmlns:oxy="http://oxyplot.org/wpf"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-		<Label x:Name="LabelTest" Content="Label" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-
+		<Label x:Name="LabelTest" Content="Label" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+		<oxy:PlotView x:Name="PlotView" Margin="0,67,10,0"/>
 	</Grid>
 </Window>

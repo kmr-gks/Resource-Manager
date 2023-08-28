@@ -27,11 +27,12 @@ namespace Resource_Manager
 
 	public sealed partial class MainPage : Page
 	{
-		[DllImport("kernel32.dll")]
-		extern static bool Beep(uint dwFreq, uint dwDuration);
-		[DllImport("user32.dll")]
-		private static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
-
+		/*
+			[DllImport("kernel32.dll")]
+			extern static bool Beep(uint dwFreq, uint dwDuration);
+			[DllImport("user32.dll")]
+			private static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
+			*/
 		private DispatcherTimer timer;
 		private int cpuCount;
 		private SystemCpuUsageReport prevCpuReport = SystemDiagnosticInfo.GetForCurrentSystem().CpuUsage.GetReport();
@@ -65,7 +66,7 @@ namespace Resource_Manager
 			var memUsage = "commited:" + FormatBytesToString(MemReport.CommittedSizeInBytes) + " avail:" + FormatBytesToString(MemReport.AvailableSizeInBytes) + " total:" + FormatBytesToString(MemReport.TotalPhysicalSizeInBytes);
 
 			cpuUsageText.Text = "now:" + cpuCount.ToString() + "\nCPU:" + cpuUsage + "\nMEM:" + memUsage + "\nCPU%" + ((user + kernel) / (user + kernel + idle));
-			Beep(1000, 100);
+			//Beep(1000, 100);
 			//MessageBox((IntPtr)null, "test", "caption", 0);
 		}
 
