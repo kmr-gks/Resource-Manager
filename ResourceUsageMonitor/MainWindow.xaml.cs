@@ -6,8 +6,6 @@ using System;
 using System.Diagnostics;
 using System.Management;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -19,29 +17,47 @@ namespace ResourceUsageMonitor
 	public partial class MainWindow : Window
 	{
 		private DispatcherTimer timer;
-		int sec = 0;
-		const int maxDataCount = 60; // 60秒分のデータを表示する
+		private int sec = 0;
+		private readonly int maxDataCount = 60; // 60秒分のデータを表示する
+		private readonly int coreCount = Environment.ProcessorCount;//コア数
+		private double[] cpuUsageArray;
+		private readonly string cpuName;
 
 		// OxyPlot のモデルとコントローラー
-		PlotModel plotModel { get; } = new PlotModel();
-		LineSeries lineSeries { get; } = new LineSeries();
+		private PlotModel plotModel { get; } = new PlotModel();
+		private LineSeries lineSeries { get; } = new LineSeries();
 
 		public MainWindow()
 		{
 			InitializeComponent();
+			// タイマーの設定
 			timer = new DispatcherTimer
 			{
 				Interval = TimeSpan.FromMilliseconds(1000)
 			};
 			timer.Tick += ResourceUsageMonitor_Tick;
 			timer.Start();
+
+			//グラフの初期化
+			cpuUsageArray = new double[coreCount + 1];
+			cpuName = GetCpuName();
 			GraphSetup();
 			using var tokenSource = new CancellationTokenSource();
-			//_ = Draw(tokenSource);
+		}
+
+		private string GetCpuName()
+		{
+			var searcher = new ManagementObjectSearcher("select Name from Win32_Processor");
+			string cpuname = "";
+			foreach (var obj in searcher.Get())
+			{
+				cpuname = obj["Name"].ToString();
+			}
+			return cpuname;
 		}
 
 		//グラフの見た目をつくる
-		void GraphSetup()
+		private void GraphSetup()
 		{
 			// X軸とY軸の設定
 			var AxisX = new LinearAxis()
@@ -72,11 +88,6 @@ namespace ResourceUsageMonitor
 
 			plotModel.Series.Add(lineSeries);
 
-			for (int i = 0; i < maxDataCount; i++)
-			{
-				lineSeries.Points.Add(new DataPoint(i, 0));
-			}
-
 			PlotView.Model = plotModel;
 		}
 
@@ -84,7 +95,7 @@ namespace ResourceUsageMonitor
 		{
 			int cpuPercent = 0;
 			var cpuUsage = GetCpuUsage(ref cpuPercent);
-			LabelTest.Content = cpuUsage + "\n";
+			Label_CpuStatus.Content = "CPU " + cpuName + " " + cpuUsageArray[coreCount] + "%\n" + cpuUsage;
 			DrawReflesh(cpuPercent);
 		}
 
@@ -118,53 +129,66 @@ namespace ResourceUsageMonitor
 			}
 			return usageString;
 		}
-		private string GetCpuUsage(ref int cpuPercent)
+		private string GetCpuUsage_old3()
 		{
-			var coreCount = Environment.ProcessorCount;
-			var usageArray = new double[coreCount + 1];
-			var searcher = new ManagementObjectSearcher("select PercentIdleTime,Name from Win32_PerfFormattedData_PerfOS_Processor");
-			var usageString = "CPU: ";
-
-			foreach (var obj in searcher.Get())
-			{
-				var usage = obj["PercentIdleTime"];
-				var name = obj["Name"];
-				if (name.ToString() == "_Total")
-				{
-					usageArray[coreCount] = 100 - (ulong)usage;
-				}
-				else
-				{
-					if (name.ToString() != null)
-					{
-
-						var coreNumber = int.Parse(name.ToString());
-						usageArray[coreNumber] = 100 - (ulong)usage;
-					}
-				}
-			}
-			for (int i = 0; i < coreCount; i++)
-			{
-				usageString += usageArray[i] + "%, ";
-			}
-			usageString += "Total " + usageArray[coreCount] + "\n";
-
-			/*
+			string displayText = "";
 			//すべてのリソース値を取得するにはこのように書く。
-			var searcher = new System.Management.ManagementObjectSearcher("select * from Win32_PerfFormattedData_PerfOS_Processor where name=\"_Total\"");
+			//searcher = new ManagementObjectSearcher("select * from Win32_PerfFormattedData_PerfOS_Processor where name=\"_Total\"");
+			var searcher = new ManagementObjectSearcher("select * from Win32_Processor");
+
 			using (ManagementObjectCollection queryCollection = searcher.Get())
 			{
 				foreach (ManagementObject m in queryCollection)
 				{
 					foreach (PropertyData prop in m.Properties)
 					{
-					usageString+= prop.Name+", "+ prop.Value+"\n";
+						displayText += prop.Name + ", " + prop.Value + "\n";
 					}
 					m.Dispose();
 				}
 			}
-			*/
-			cpuPercent = (int)usageArray[coreCount];
+			return displayText;
+		}
+		private string GetCpuUsage(ref int cpuPercent)
+		{
+			var coreCount = Environment.ProcessorCount;
+			var searcher = new ManagementObjectSearcher("select PercentProcessorTime,Name from Win32_PerfFormattedData_PerfOS_Processor");
+			var usageString = "CPU: ";
+			try
+			{
+				var cpuCounter = new PerformanceCounter("Processor Information", "% Processor Performance", "_Total");
+				var cpuMultiplier = cpuCounter.NextValue();//これが常に0になる
+				usageString += cpuMultiplier + " ";
+			}
+			catch
+			{
+				usageString += "error";
+			}
+
+			foreach (var obj in searcher.Get())
+			{
+				var usage = obj["PercentProcessorTime"];
+				var name = obj["Name"];
+				if (name.ToString() == "_Total")
+				{
+					cpuUsageArray[coreCount] = (ulong)usage;
+				}
+				else
+				{
+					if (name.ToString() != null)
+					{
+						var coreNumber = int.Parse(name.ToString());
+						cpuUsageArray[coreNumber] = (ulong)usage;
+					}
+				}
+			}
+			for (int i = 0; i < coreCount; i++)
+			{
+				usageString += cpuUsageArray[i] + "%, ";
+			}
+			usageString += "Total " + cpuUsageArray[coreCount] + "\n";
+
+			cpuPercent = (int)cpuUsageArray[coreCount];
 			if (cpuPercent > 100) cpuPercent = 100;
 			return usageString;
 		}
@@ -179,10 +203,8 @@ namespace ResourceUsageMonitor
 				plotModel.Axes[0].Minimum++;
 				plotModel.Axes[0].Maximum++;
 			}
-			lineSeries.Points.Add(new DataPoint(sec + maxDataCount, cpuPercent));
+			lineSeries.Points.Add(new DataPoint(sec, cpuPercent));
 			plotModel.InvalidatePlot(true);
 		}
 	}
-
-
 }

@@ -7,8 +7,8 @@
         xmlns:oxy="http://oxyplot.org/wpf"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-		<Label x:Name="LabelTest" Content="Label" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-		<oxy:PlotView x:Name="PlotView" Margin="0,67,10,0"/>
+	<Grid>
+		<oxy:PlotView x:Name="PlotView" Margin="0,50,0,0"/>
+		<Label x:Name="Label_CpuStatus" Content="Label" HorizontalAlignment="Left" VerticalAlignment="Top"/>
 	</Grid>
 </Window>
