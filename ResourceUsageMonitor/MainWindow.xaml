@@ -17,7 +17,6 @@
 			</TabItem>
 			<TabItem x:Name="TabPerCore" Header="per a core">
 				<Grid x:Name="TabGridPerCore">
-					<WrapPanel x:Name="wrapPanelPerCore" Orientation="Horizontal" />
 				</Grid>
 			</TabItem>
 		</TabControl>
