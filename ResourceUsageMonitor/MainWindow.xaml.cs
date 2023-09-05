@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Management;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace ResourceUsageMonitor
@@ -23,9 +24,15 @@ namespace ResourceUsageMonitor
 		private double[] cpuUsageArray;
 		private readonly string cpuName;
 
-		// OxyPlot のモデルとコントローラー
+		// OxyPlotでグラフを表示するときに必要
 		private PlotModel plotModel { get; } = new PlotModel();
 		private LineSeries lineSeries { get; } = new LineSeries();
+
+		private PlotModel []coreGraphPlotModel;
+		private PlotView [] corePlotView;
+		private LineSeries[] coreLineSeries;
+
+		private Label[] usageLabel;
 
 		public MainWindow()
 		{
@@ -38,11 +45,68 @@ namespace ResourceUsageMonitor
 			timer.Tick += ResourceUsageMonitor_Tick;
 			timer.Start();
 
+			SizeChanged += onWindowSizeChanged;
+
 			//グラフの初期化
 			cpuUsageArray = new double[coreCount + 1];
+			coreGraphPlotModel = new PlotModel[coreCount];
+			corePlotView = new PlotView[coreCount];
+			coreLineSeries = new LineSeries[coreCount];
+			usageLabel = new Label[coreCount];
 			cpuName = GetCpuName();
 			GraphSetup();
 			using var tokenSource = new CancellationTokenSource();
+
+			for (int i = 0; i < coreCount; i++)
+			{
+				//コアごとのグラフを動的に追加
+				coreGraphPlotModel[i] = new PlotModel();
+				// X軸とY軸の設定
+				coreGraphPlotModel[i].Axes.Add(new LinearAxis()
+				{
+					Position = AxisPosition.Bottom,
+					Minimum = 0,
+					Maximum = 60,
+					IsAxisVisible = false,
+				});
+				coreGraphPlotModel[i].Axes.Add(new LinearAxis()
+				{
+					Position = AxisPosition.Left,
+					Minimum = 0,
+					Maximum = 100,
+					IsAxisVisible = false,
+				});
+
+				coreGraphPlotModel[i].Background = OxyColors.White;
+
+				//折れ線グラフの設定
+				coreLineSeries[i] = new LineSeries();
+				coreLineSeries[i].StrokeThickness = 1.5;
+				coreLineSeries[i].Color = OxyColor.FromRgb(0, 100, 205);
+
+				coreGraphPlotModel[i].Series.Add(coreLineSeries[i]);
+
+				corePlotView[i] = new PlotView()
+				{
+					Name = "plotView" + "Core" + i,
+					Width = 200,
+					Height = 100,
+					Model = coreGraphPlotModel[i],
+				};
+				wrapPanelPerCore.Children.Add(corePlotView[i]);
+				
+				//コアごとの使用率を表示するラベルを動的に追加
+				usageLabel[i] = new Label()
+				{
+					Name = "LabelCore" + i,
+					Width = 200,
+					Height = 100,
+					Content = "Core" + i + " " + cpuUsageArray[i] + "%",
+				};
+
+				//wrapPanelPerCore.Children.Add(usageLabel[i]);
+				TabGridPerCore.Children.Add(usageLabel[i]);
+			}
 		}
 
 		private string GetCpuName()
@@ -60,27 +124,20 @@ namespace ResourceUsageMonitor
 		private void GraphSetup()
 		{
 			// X軸とY軸の設定
-			var AxisX = new LinearAxis()
+			plotModel.Axes.Add(new LinearAxis()
 			{
 				Position = AxisPosition.Bottom,
-				TitleFontSize = 16,
-				Title = "X軸"
-			};
-
-			var AxisY = new LinearAxis()
+				Minimum = 0,
+				Maximum = 60
+			});
+			plotModel.Axes.Add(new LinearAxis()
 			{
 				Position = AxisPosition.Left,
-				TitleFontSize = 16,
-				Title = "Y軸"
-			};
+				Minimum = 0,
+				Maximum = 100
+			});
 
-			plotModel.Axes.Add(AxisX);
-			plotModel.Axes.Add(AxisY);
 			plotModel.Background = OxyColors.White;
-			plotModel.Axes[0].Minimum = 0;
-			plotModel.Axes[0].Maximum = 60;
-			plotModel.Axes[1].Minimum = 0;
-			plotModel.Axes[1].Maximum = 100;
 
 			//折れ線グラフの設定
 			lineSeries.StrokeThickness = 1.5;
@@ -88,15 +145,15 @@ namespace ResourceUsageMonitor
 
 			plotModel.Series.Add(lineSeries);
 
-			PlotView.Model = plotModel;
+			AllCpuPlotView.Model = plotModel;
 		}
 
 		private void ResourceUsageMonitor_Tick(object? sender, EventArgs e)
 		{
 			int cpuPercent = 0;
 			var cpuUsage = GetCpuUsage(ref cpuPercent);
-			Label_CpuStatus.Content = "CPU " + cpuName + " " + cpuUsageArray[coreCount] + "%\n" + cpuUsage;
-			DrawReflesh(cpuPercent);
+			LabelCpu.Content = "CPU " + cpuName + " " + cpuUsageArray[coreCount] + "%\n";
+			DrawRefresh(cpuPercent);
 		}
 
 		private string GetCpuUsage_old1()
@@ -182,18 +239,13 @@ namespace ResourceUsageMonitor
 					}
 				}
 			}
-			for (int i = 0; i < coreCount; i++)
-			{
-				usageString += cpuUsageArray[i] + "%, ";
-			}
-			usageString += "Total " + cpuUsageArray[coreCount] + "\n";
 
 			cpuPercent = (int)cpuUsageArray[coreCount];
 			if (cpuPercent > 100) cpuPercent = 100;
 			return usageString;
 		}
 
-		void DrawReflesh(int cpuPercent)
+		void DrawRefresh(int cpuPercent)
 		{
 			sec++;
 			//データ数が maxDataCount を超えたらデキューしていく
@@ -205,6 +257,32 @@ namespace ResourceUsageMonitor
 			}
 			lineSeries.Points.Add(new DataPoint(sec, cpuPercent));
 			plotModel.InvalidatePlot(true);
+
+			for(int i = 0; i < coreCount; i++)
+			{
+				//データ数が maxDataCount を超えたらデキューしていく
+				if (coreLineSeries[i].Points.Count > maxDataCount)
+				{
+					coreLineSeries[i].Points.RemoveAt(0);
+					coreGraphPlotModel[i].Axes[0].Minimum++;
+					coreGraphPlotModel[i].Axes[0].Maximum++;
+				}
+				coreLineSeries[i].Points.Add(new DataPoint(sec, cpuUsageArray[i]));
+				coreGraphPlotModel[i].InvalidatePlot(true);
+
+				//使用率を表示するラベルを更新する
+				usageLabel[i].Content = "Core" + i + " " + cpuUsageArray[i] + "%"+"\n"+usageLabel[i].Margin.Left+","+usageLabel[i].Margin.Top;
+			}
+		}
+
+		private void onWindowSizeChanged(object sender, SizeChangedEventArgs e)
+		{
+
+			//ウィンドウサイズが変更されたらグラフのサイズも変更する
+			for (int i = 0; i < coreCount; i++)
+			{
+				usageLabel[i].Margin=new Thickness(100,200,300,400);
+			}
 		}
 	}
 }
