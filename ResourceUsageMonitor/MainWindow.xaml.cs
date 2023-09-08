@@ -22,16 +22,30 @@ namespace ResourceUsageMonitor
 		private readonly int maxDataCount = 60; // 60秒分のデータを表示する
 		private readonly int coreCount = Environment.ProcessorCount;//コア数
 		private readonly double[] cpuUsageArray;
+
+		//CPU使用率を取得するためのカウンタ
+		private readonly PerformanceCounter cpuOverallUsageCounter;
+		private readonly PerformanceCounter[] coreUsageCounter;
+
+		//CPU周波数の倍率を取得するためのカウンタ
+		private readonly PerformanceCounter cpuOverallPercentCounter;
+		private readonly PerformanceCounter[] corePercentCounter;
+
+		//CPUの基本周波数を取得するためのカウンタ
+		private readonly PerformanceCounter cpuOverallBaseHzCounter;
+		private readonly PerformanceCounter[] coreBaseHzCounter;
+
+		//CPU名
 		private readonly string cpuName;
 
-		// OxyPlotでグラフを表示するときに必要
+		// OxyPlotでグラフを表示 全体の使用率
 		private readonly PlotModel plotModelOverall = new();
 		private readonly LineSeries lineSeriesOverall = new();
-
+		// OxyPlotでグラフを表示 コアごとの使用率
 		private readonly PlotModel[] coreGraphPlotModel;
 		private readonly PlotView[] corePlotView;
 		private readonly LineSeries[] coreLineSeries;
-
+		// コアごとの使用率/周波数を表示するラベル
 		private readonly Label[] usageLabel;
 
 		public MainWindow()
@@ -40,7 +54,7 @@ namespace ResourceUsageMonitor
 			// タイマーの設定
 			timer = new DispatcherTimer
 			{
-				Interval = TimeSpan.FromMilliseconds(100)
+				Interval = TimeSpan.FromMilliseconds(500)
 			};
 			timer.Tick += ResourceUsageMonitor_Tick;
 			timer.Start();
@@ -53,9 +67,81 @@ namespace ResourceUsageMonitor
 			corePlotView = new PlotView[coreCount];
 			coreLineSeries = new LineSeries[coreCount];
 			usageLabel = new Label[coreCount];
+
+			//CPU使用率を取得するためのカウンタの準備
+			cpuOverallUsageCounter = new("Processor Information", "% Processor Time", "_Total");
+			cpuOverallUsageCounter.NextValue();
+			coreUsageCounter = new PerformanceCounter[coreCount];
+			for (int i = 0; i < coreCount; i++)
+			{
+				coreUsageCounter[i] = new("Processor Information", "% Processor Time", "0," + i.ToString());
+				coreUsageCounter[i].NextValue();
+			}
+
+			//CPU周波数を取得するためのカウンタの準備
+			cpuOverallPercentCounter = new("Processor Information", "% Processor Performance", "_Total");
+			cpuOverallPercentCounter.NextValue();
+			corePercentCounter = new PerformanceCounter[coreCount];
+			for (int i = 0; i < coreCount; i++)
+			{
+				corePercentCounter[i] = new("Processor Information", "% Processor Performance", "0," + i.ToString());
+				corePercentCounter[i].NextValue();
+			}
+			cpuOverallBaseHzCounter = new("Processor Information", "Processor Frequency", "_Total");
+			cpuOverallBaseHzCounter.NextValue();
+			coreBaseHzCounter = new PerformanceCounter[coreCount];
+			for (int i = 0; i < coreCount; i++)
+			{
+				coreBaseHzCounter[i] = new("Processor Information", "Processor Frequency", "0," + i.ToString());
+				coreBaseHzCounter[i].NextValue();
+			}
+
+			//CPU名を取得する
 			cpuName = GetCpuName();
 			GraphSetup();
 			using var tokenSource = new CancellationTokenSource();
+
+
+		}
+
+		private static string GetCpuName()
+		{
+			var searcher = new ManagementObjectSearcher("select Name from Win32_Processor");
+
+			foreach (var obj in searcher.Get())
+			{
+				return obj["Name"].ToString() ?? "";
+			}
+			return "";
+		}
+
+		//グラフの見た目をつくる
+		private void GraphSetup()
+		{
+			//全体的な使用率のグラフ
+			// X軸とY軸の設定
+			plotModelOverall.Axes.Add(new LinearAxis()
+			{
+				Position = AxisPosition.Bottom,
+				Minimum = 0,
+				Maximum = 60
+			});
+			plotModelOverall.Axes.Add(new LinearAxis()
+			{
+				Position = AxisPosition.Left,
+				Minimum = 0,
+				Maximum = 100
+			});
+
+			plotModelOverall.Background = OxyColors.White;
+
+			//折れ線グラフの設定
+			lineSeriesOverall.StrokeThickness = 1.5;
+			lineSeriesOverall.Color = OxyColor.FromRgb(0, 100, 205);
+
+			plotModelOverall.Series.Add(lineSeriesOverall);
+
+			AllCpuPlotView.Model = plotModelOverall;
 
 			for (int i = 0; i < coreCount; i++)
 			{
@@ -105,149 +191,40 @@ namespace ResourceUsageMonitor
 					Width = 200,
 					Height = 100,
 					Content = "Core" + i + " " + cpuUsageArray[i] + "%",
-					BorderBrush = System.Windows.Media.Brushes.Black,
-					BorderThickness = new Thickness(1),
+					HorizontalContentAlignment = System.Windows.HorizontalAlignment.Center,
 				};
 
 				TabGridPerCore.Children.Add(usageLabel[i]);
 			}
-		}
 
-		private static string GetCpuName()
-		{
-			var searcher = new ManagementObjectSearcher("select Name from Win32_Processor");
-
-			foreach (var obj in searcher.Get())
+			//最初のウィンドウの大きさに応じてグラフの大きさを変更する。(OnWindowSizeChangedと同じ内容)
+			Loaded += new RoutedEventHandler((sender, e) =>
 			{
-				return obj["Name"].ToString() ?? "";
-			}
-			return "";
-		}
-
-		//グラフの見た目をつくる
-		private void GraphSetup()
-		{
-			// X軸とY軸の設定
-			plotModelOverall.Axes.Add(new LinearAxis()
-			{
-				Position = AxisPosition.Bottom,
-				Minimum = 0,
-				Maximum = 60
+				for (int i = 0; i < coreCount; i++)
+				{
+					usageLabel[i].Margin = RightTopWidthHeight(i * TabGridPerCore.ActualWidth / coreCount, 0, TabGridPerCore.ActualWidth / coreCount, 100);
+					usageLabel[i].Width = TabGridPerCore.ActualWidth / coreCount;
+					corePlotView[i].Margin = RightTopWidthHeight(i * TabGridPerCore.ActualWidth / coreCount, 0, TabGridPerCore.ActualWidth / coreCount, 100);
+					corePlotView[i].Width = TabGridPerCore.ActualWidth / coreCount;
+				}
 			});
-			plotModelOverall.Axes.Add(new LinearAxis()
-			{
-				Position = AxisPosition.Left,
-				Minimum = 0,
-				Maximum = 100
-			});
-
-			plotModelOverall.Background = OxyColors.White;
-
-			//折れ線グラフの設定
-			lineSeriesOverall.StrokeThickness = 1.5;
-			lineSeriesOverall.Color = OxyColor.FromRgb(0, 100, 205);
-
-			plotModelOverall.Series.Add(lineSeriesOverall);
-
-			AllCpuPlotView.Model = plotModelOverall;
 		}
 
 		private void ResourceUsageMonitor_Tick(object? sender, EventArgs e)
 		{
-			int cpuPercent = 0;
-			GetCpuUsage(ref cpuPercent);
-			LabelCpu.Content = "CPU " + cpuName + " " + cpuUsageArray[coreCount] + "%\n";
-			DrawRefresh(cpuPercent);
-		}
-
-		private string GetCpuUsage_old1()
-		{
-			var usageString = "Cores:" + coreCount;
-			PerformanceCounter[] cpuCounters = new PerformanceCounter[coreCount];
+			//全体,コアごとの使用率を取得する
+			cpuUsageArray[coreCount] = cpuOverallUsageCounter.NextValue();
 			for (int i = 0; i < coreCount; i++)
 			{
-				cpuCounters[i] = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-				usageString += " " + cpuCounters[i].NextValue() + "%,";
+				cpuUsageArray[i] = coreUsageCounter[i].NextValue();
 			}
-			double totalCpuUsage = 0;
-			foreach (var counter in cpuCounters)
-			{
-				totalCpuUsage += (double)counter.NextValue();
-			}
-			return usageString;
-
-		}
-		private static string GetCpuUsage_old2()
-		{
-			var searcher = new System.Management.ManagementObjectSearcher("select LoadPercentage from CIM_Processor");
-
-			string usageString = "CPU: ";
-			foreach (var obj in searcher.Get())
-			{
-				var usage = obj["LoadPercentage"];
-				usageString += usage + "%, ";
-			}
-			return usageString;
-		}
-		private static string GetCpuUsage_old3()
-		{
-			string displayText = "";
-			//すべてのリソース値を取得するにはこのように書く。
-			//searcher = new ManagementObjectSearcher("select * from Win32_PerfFormattedData_PerfOS_Processor where name=\"_Total\"");
-			var searcher = new ManagementObjectSearcher("select * from Win32_Processor");
-
-			using (var queryCollection = searcher.Get())
-			{
-				foreach (var m in queryCollection)
-				{
-					foreach (var prop in m.Properties)
-					{
-						displayText += prop.Name + ", " + prop.Value + "\n";
-					}
-					m.Dispose();
-				}
-			}
-			return displayText;
-		}
-		private string GetCpuUsage(ref int cpuPercent)
-		{
-			var searcher = new ManagementObjectSearcher("select PercentProcessorTime,Name from Win32_PerfFormattedData_PerfOS_Processor");
-			var usageString = "CPU: ";
-			try
-			{
-				var cpuCounter = new PerformanceCounter("Processor Information", "% Processor Performance", "_Total");
-				var cpuMultiplier = cpuCounter.NextValue();//これが常に0になる
-				usageString += cpuMultiplier + " ";
-			}
-			catch
-			{
-				usageString += "error";
-			}
-
-			foreach (var obj in searcher.Get())
-			{
-				var usage = obj["PercentProcessorTime"];
-				var name = obj["Name"];
-				if (name.ToString() == "_Total")
-				{
-					cpuUsageArray[coreCount] = (ulong)usage;
-				}
-				else
-				{
-					var coreNumber = int.Parse(name.ToString() ?? "");
-					if (coreNumber < coreCount)
-					{
-						cpuUsageArray[coreNumber] = (ulong)usage;
-					}
-				}
-			}
-
-			cpuPercent = (int)cpuUsageArray[coreCount];
-			if (cpuPercent > 100) cpuPercent = 100;
-			return usageString;
+			//全体の周波数を取得する。
+			var ghz = cpuOverallPercentCounter.NextValue() * cpuOverallBaseHzCounter.NextValue() / 100 / 1000;
+			LabelCpu.Content = "CPU " + cpuName + " " + cpuUsageArray[coreCount].ToString("F2") + "% " + ghz.ToString("F2") + "GHz\n";
+			DrawRefresh();
 		}
 
-		void DrawRefresh(int cpuPercent)
+		void DrawRefresh()
 		{
 			sec++;
 			//データ数が maxDataCount を超えたらデキューしていく
@@ -257,7 +234,7 @@ namespace ResourceUsageMonitor
 				plotModelOverall.Axes[0].Minimum++;
 				plotModelOverall.Axes[0].Maximum++;
 			}
-			lineSeriesOverall.Points.Add(new DataPoint(sec, cpuPercent));
+			lineSeriesOverall.Points.Add(new DataPoint(sec, cpuUsageArray[coreCount]));
 			plotModelOverall.InvalidatePlot(true);
 
 			for (int i = 0; i < coreCount; i++)
@@ -272,9 +249,11 @@ namespace ResourceUsageMonitor
 				coreGraphPlotModel[i].InvalidatePlot(true);
 
 				//使用率を表示するラベルを更新する
-				usageLabel[i].Content = "Core" + i + " " + cpuUsageArray[i] + "%";
+				var ghz = corePercentCounter[i].NextValue() * coreBaseHzCounter[i].NextValue() / 100 / 1000;
+				usageLabel[i].Content = "コア" + i + "\n" + cpuUsageArray[i].ToString("F2") + "%\n" + ghz.ToString("F2") + "GHz";
 			}
 		}
+
 		private Thickness RightTopWidthHeight(double left, double top, double width = 100, double height = 100)
 		{
 			return new Thickness(left, top, TabGridPerCore.ActualWidth - left - width, TabGridPerCore.ActualHeight - top - height);
@@ -282,7 +261,6 @@ namespace ResourceUsageMonitor
 
 		private void OnWindowSizeChanged(object sender, SizeChangedEventArgs e)
 		{
-
 			//ウィンドウサイズが変更されたらグラフのサイズも変更する
 			for (int i = 0; i < coreCount; i++)
 			{
