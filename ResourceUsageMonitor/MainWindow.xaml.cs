@@ -21,6 +21,7 @@ namespace ResourceUsageMonitor
 		private int sec = 0;
 		private readonly int maxDataCount = 60; // 60秒分のデータを表示する
 		private readonly int coreCount = Environment.ProcessorCount;//コア数
+		private readonly int columnCount, rowCount;//一行、一列に表示するコアのグラフの数
 		private readonly double[] cpuUsageArray;
 
 		//CPU使用率を取得するためのカウンタ
@@ -59,6 +60,8 @@ namespace ResourceUsageMonitor
 			timer.Tick += ResourceUsageMonitor_Tick;
 			timer.Start();
 
+			columnCount = GetColumn(coreCount);
+			rowCount = (int)Math.Ceiling((double)coreCount / columnCount);
 			SizeChanged += OnWindowSizeChanged;
 
 			//グラフの初期化
@@ -177,8 +180,6 @@ namespace ResourceUsageMonitor
 				corePlotView[i] = new PlotView()
 				{
 					Name = "plotView" + "Core" + i,
-					Width = 200,
-					Height = 100,
 					Model = coreGraphPlotModel[i],
 				};
 				TabGridPerCore.Children.Add(corePlotView[i]);
@@ -188,8 +189,6 @@ namespace ResourceUsageMonitor
 				usageLabel[i] = new Label()
 				{
 					Name = "LabelCore" + i,
-					Width = 200,
-					Height = 100,
 					Content = "Core" + i + " " + cpuUsageArray[i] + "%",
 					HorizontalContentAlignment = System.Windows.HorizontalAlignment.Center,
 				};
@@ -198,16 +197,7 @@ namespace ResourceUsageMonitor
 			}
 
 			//最初のウィンドウの大きさに応じてグラフの大きさを変更する。(OnWindowSizeChangedと同じ内容)
-			Loaded += new RoutedEventHandler((sender, e) =>
-			{
-				for (int i = 0; i < coreCount; i++)
-				{
-					usageLabel[i].Margin = RightTopWidthHeight(i * TabGridPerCore.ActualWidth / coreCount, 0, TabGridPerCore.ActualWidth / coreCount, 100);
-					usageLabel[i].Width = TabGridPerCore.ActualWidth / coreCount;
-					corePlotView[i].Margin = RightTopWidthHeight(i * TabGridPerCore.ActualWidth / coreCount, 0, TabGridPerCore.ActualWidth / coreCount, 100);
-					corePlotView[i].Width = TabGridPerCore.ActualWidth / coreCount;
-				}
-			});
+			Loaded += new RoutedEventHandler((sender, e) => { OnWindowSizeChanged(null, null); });
 		}
 
 		private void ResourceUsageMonitor_Tick(object? sender, EventArgs e)
@@ -220,7 +210,7 @@ namespace ResourceUsageMonitor
 			}
 			//全体の周波数を取得する。
 			var ghz = cpuOverallPercentCounter.NextValue() * cpuOverallBaseHzCounter.NextValue() / 100 / 1000;
-			LabelCpu.Content = "CPU " + cpuName + " " + cpuUsageArray[coreCount].ToString("F2") + "% " + ghz.ToString("F2") + "GHz\n";
+			LabelCpu.Content = "CPU " + cpuName + " " + cpuUsageArray[coreCount].ToString("F2") + "% " + ghz.ToString("F2") + "GHz";
 			DrawRefresh();
 		}
 
@@ -254,21 +244,38 @@ namespace ResourceUsageMonitor
 			}
 		}
 
-		private Thickness RightTopWidthHeight(double left, double top, double width = 100, double height = 100)
+		private Thickness LeftTopWidthHeightToMargin(double left, double top, double width = 100, double height = 100)
 		{
 			return new Thickness(left, top, TabGridPerCore.ActualWidth - left - width, TabGridPerCore.ActualHeight - top - height);
 		}
 
-		private void OnWindowSizeChanged(object sender, SizeChangedEventArgs e)
+		private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs? e)
 		{
 			//ウィンドウサイズが変更されたらグラフのサイズも変更する
 			for (int i = 0; i < coreCount; i++)
 			{
-				usageLabel[i].Margin = RightTopWidthHeight(i * TabGridPerCore.ActualWidth / coreCount, 0, TabGridPerCore.ActualWidth / coreCount, 100);
-				usageLabel[i].Width = TabGridPerCore.ActualWidth / coreCount;
-				corePlotView[i].Margin = RightTopWidthHeight(i * TabGridPerCore.ActualWidth / coreCount, 0, TabGridPerCore.ActualWidth / coreCount, 100);
-				corePlotView[i].Width = TabGridPerCore.ActualWidth / coreCount;
+				var left = (i % columnCount) * TabGridPerCore.ActualWidth / columnCount;
+				var top = (i / columnCount) * TabGridPerCore.ActualHeight / rowCount;
+				var width = TabGridPerCore.ActualWidth / columnCount;
+				var height = TabGridPerCore.ActualHeight / rowCount;
+				usageLabel[i].Margin = LeftTopWidthHeightToMargin(left, top, width, height);
+				usageLabel[i].Width = width;
+				usageLabel[i].Height = height;
+				corePlotView[i].Margin = LeftTopWidthHeightToMargin(left, top, width, height);
+				corePlotView[i].Width = width;
+				corePlotView[i].Height = height;
 			}
+		}
+
+		//一行に表示するコアのグラフの数を返す
+		private static int GetColumn(int items)
+		{
+			if (items <= 64)
+			{
+				int sq = (int)Math.Sqrt(items);
+				return (int)Math.Ceiling((double)items / sq);
+			}
+			else return (int)Math.Ceiling((double)items / 10);
 		}
 	}
 }
