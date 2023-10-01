@@ -55,7 +55,7 @@ namespace ResourceUsageMonitor
 			// タイマーの設定
 			timer = new DispatcherTimer
 			{
-				Interval = TimeSpan.FromMilliseconds(500)
+				Interval = TimeSpan.FromSeconds(1)
 			};
 			timer.Tick += ResourceUsageMonitor_Tick;
 			timer.Start();
@@ -276,6 +276,17 @@ namespace ResourceUsageMonitor
 				return (int)Math.Ceiling((double)items / sq);
 			}
 			else return (int)Math.Ceiling((double)items / 10);
+		}
+
+		private void SetCpuAffinity(){
+		//すべてのプロセス
+			Process []process;
+			
+			//プロセスの取得
+			process = Process.GetProcesses();
+			foreach(Process p in process){
+   p.ProcessorAffinity = (IntPtr)0x00000001;
+			}
 		}
 	}
 }
