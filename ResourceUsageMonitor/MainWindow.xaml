@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ResourceUsageMonitor"
         xmlns:oxy="http://oxyplot.org/wpf"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Resource Manager" Height="450" Width="800">
 	<Grid>
 		<Label x:Name="LabelCpu" Content="Label" HorizontalAlignment="Left" VerticalAlignment="Top"/>
 		<TabControl x:Name="TabsCpu" SelectedItem="{Binding ElementName=TabPerCore, Mode=OneWay}" Margin="0,50,0,0">
