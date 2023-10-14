@@ -7,13 +7,13 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="e9e6541e-d9c7-4931-983d-52161e4185af"
-    Publisher="CN=gukos"
-    Version="1.0.12.0" />
+    Name="64069Gukos.133BA5731AE"
+    Publisher="CN=127557C9-A443-45DF-B9F7-C3119DE784FD"
+    Version="1.0.17.0" />
 
   <Properties>
-    <DisplayName>Resource Manager</DisplayName>
-    <PublisherDisplayName>gukos</PublisherDisplayName>
+    <DisplayName>Resource Manager for your PC</DisplayName>
+    <PublisherDisplayName>Gukos</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
 
@@ -31,7 +31,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Resource Manager"
+        DisplayName="Resource Manager for your PC"
         Description="Resource Manager"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
@@ -43,7 +43,6 @@
   </Applications>
 
   <Capabilities>
-    <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
   </Capabilities>
 </Package>
