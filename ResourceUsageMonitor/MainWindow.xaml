@@ -4,19 +4,25 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ResourceUsageMonitor"
+		xmlns:ig="http://schemas.infragistics.com/xaml"
         xmlns:oxy="http://oxyplot.org/wpf"
         mc:Ignorable="d"
         Title="Resource Manager" Height="450" Width="800">
 	<Grid>
 		<Label x:Name="LabelCpu" Content="Label" HorizontalAlignment="Left" VerticalAlignment="Top"/>
 		<TabControl x:Name="TabsCpu" SelectedItem="{Binding ElementName=TabPerCore, Mode=OneWay}" Margin="0,50,0,0">
-			<TabItem x:Name="TabAllCore" Header="all cores">
+			<TabItem x:Name="TabAllCore" Header="CPU(Overall)">
 				<Grid>
 					<oxy:PlotView x:Name="AllCpuPlotView" Grid.ColumnSpan="2"/>
 				</Grid>
 			</TabItem>
-			<TabItem x:Name="TabPerCore" Header="per a core">
+			<TabItem x:Name="TabPerCore" Header="CPU(Per core)">
 				<Grid x:Name="TabGridPerCore">
+				</Grid>
+			</TabItem>
+			<TabItem x:Name="TabProcess" Header="Processes">
+				<Grid x:Name="TabGridProcess">
+					<TextBlock x:Name="TextBlockProcess" TextWrapping="Wrap" Text="process name..." Margin="0,0,0,261" />
 				</Grid>
 			</TabItem>
 		</TabControl>

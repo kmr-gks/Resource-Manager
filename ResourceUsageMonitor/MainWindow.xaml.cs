@@ -50,11 +50,6 @@ namespace ResourceUsageMonitor
 			cpuInfo.Update(LabelCpu, maxDataCount, sec);
 		}
 
-		public Thickness LeftTopWidthHeightToMargin(double left, double top, double width = 100, double height = 100)
-		{
-			return new Thickness(left, top, TabGridPerCore.ActualWidth - left - width, TabGridPerCore.ActualHeight - top - height);
-		}
-
 		private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs? e)
 		{
 			cpuInfo.OnWindowSizeChanged((int)TabGridPerCore.ActualWidth, (int)TabGridPerCore.ActualHeight);
