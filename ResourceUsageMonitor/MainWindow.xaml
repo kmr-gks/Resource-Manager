@@ -22,7 +22,10 @@
 			</TabItem>
 			<TabItem x:Name="TabProcess" Header="Processes">
 				<Grid x:Name="TabGridProcess">
-					<TextBlock x:Name="TextBlockProcess" TextWrapping="Wrap" Text="process name..." Margin="0,0,0,261" />
+					<TextBox x:Name="TextBoxProcess" TextChanged="TextBoxProcessTextChanged" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120"/>
+					<Button x:Name="buttonLowPriority" Click="ButtonLowPriorityClick"  Content="Low Priority" HorizontalAlignment="Left" Margin="146,12,0,0" VerticalAlignment="Top"/>
+					<Button x:Name="buttonTerminate" Click="ButtonTerminateClick" Content="Terminate" HorizontalAlignment="Left" Margin="226,12,0,0" VerticalAlignment="Top"/>
+					<Label x:Name="LabelProcessSearchresult" Content="" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top"/>
 				</Grid>
 			</TabItem>
 		</TabControl>

@@ -20,12 +20,15 @@ namespace ResourceUsageMonitor
 		private readonly DispatcherTimer timer;
 		private int sec = 0;
 		private readonly int maxDataCount = 60; // 60秒分のデータを表示する
-		private CpuInfo cpuInfo;
+		private readonly CpuInfo cpuInfo;
+		private readonly ProcessInfo processInfo;
 
 		public MainWindow()
 		{
 			InitializeComponent();
+
 			cpuInfo = new(AllCpuPlotView, TabGridPerCore);
+			processInfo = new();
 
 			// タイマーの設定
 			timer = new DispatcherTimer
@@ -34,7 +37,6 @@ namespace ResourceUsageMonitor
 			};
 			timer.Tick += ResourceUsageMonitor_Tick;
 			timer.Start();
-
 
 			SizeChanged += OnWindowSizeChanged;
 
@@ -66,6 +68,21 @@ namespace ResourceUsageMonitor
 			{
 				p.ProcessorAffinity = 0x00000001;
 			}
+		}
+
+		private void ButtonLowPriorityClick(object sender, RoutedEventArgs e)
+		{
+			processInfo?.SetPriorityLow(TextBoxProcess?.Text);
+		}
+
+		private void ButtonTerminateClick(object sender, RoutedEventArgs e)
+		{
+			processInfo.Terminate(TextBoxProcess.Text);
+		}
+
+		private void TextBoxProcessTextChanged(object sender, TextChangedEventArgs e)
+		{
+			LabelProcessSearchresult.Content = processInfo?.SearchProcess(TextBoxProcess?.Text);
 		}
 	}
 }
