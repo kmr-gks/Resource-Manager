@@ -33,8 +33,8 @@ namespace ResourceUsageMonitor
 		}
 		public void SetPriorityLow(string processName)
 		{
-		processName=TrimExeExtension(processName);
-			var processes=Process.GetProcessesByName(processName);
+			processName = TrimExeExtension(processName);
+			var processes = Process.GetProcessesByName(processName);
 			foreach (var process in processes)
 			{
 				process.PriorityClass = ProcessPriorityClass.Idle;
@@ -44,7 +44,7 @@ namespace ResourceUsageMonitor
 
 		public void Terminate(string processName)
 		{
-		processName=TrimExeExtension(processName);
+			processName = TrimExeExtension(processName);
 			var processes = Process.GetProcessesByName(processName);
 			foreach (var process in processes)
 			{
