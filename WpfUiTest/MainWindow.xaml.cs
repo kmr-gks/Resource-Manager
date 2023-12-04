@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows;
+﻿using System.Windows;
 
 namespace WpfUiTest
 {
@@ -13,43 +10,15 @@ namespace WpfUiTest
 		public MainWindow()
 		{
 			InitializeComponent();
-			this.DataContext = new MainWindowViewModel();
-		}
 
-		private void Button_Click(object sender, RoutedEventArgs e)
-		{
-			((MainWindowViewModel)DataContext).Input = "ボタンをクリックしました";
-		}
-	}
-
-	public class MainWindowViewModel : INotifyPropertyChanged
-	{
-		private string m_input = "初期化";
-
-		// INotifyPropertyChanged を実装するためのイベントハンドラ
-		public event PropertyChangedEventHandler? PropertyChanged;
-
-		// プロパティ名によって自動的にセットされる
-		public void OnPropertyChanged([CallerMemberName] string propertyName = null)
-		{
-			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-		}
-
-		// 入力テキスト用のプロパティ
-		public string Input
-		{
-			get { return m_input; }
-			set
+			// コンストラクタ内でItemsSourceを積み込むとする。
+			PrefecturesComboBox.ItemsSource = new List<Candidates>()
 			{
-				if (m_input != value)
-				{
-					m_input = value;
-					// 値をセットした後、画面側でも値が反映されるように通知する
-					OnPropertyChanged();
-				}
-			}
+				new(){ Name = "北海道", SecondName = "札幌市"},
+				new(){ Name = "青森県", SecondName = "青森市"},
+				new(){ Name = "鹿児島県", SecondName = "鹿児島市"},
+				new(){ Name = "沖縄県", SecondName = "那覇市"},
+			};
 		}
-
-		public IEnumerable<string> TestItems { get; } = new string[] { "aaa", "bbb", "ccc" };
 	}
 }

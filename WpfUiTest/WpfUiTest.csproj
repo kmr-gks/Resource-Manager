@@ -7,9 +7,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="WPFTextBoxAutoComplete" Version="1.0.5" />
-  </ItemGroup>
-
 </Project>

@@ -4,13 +4,19 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfUiTest"
-        xmlns:behaviors="clr-namespace:WPFTextBoxAutoComplete;assembly=WPFTextBoxAutoComplete"
+		xmlns:cc="clr-namespace:WpfUiTest"
         mc:Ignorable="d"
         Title="UiTest" Height="450" Width="800">
-	<StackPanel Orientation="Vertical">
-		<TextBox Margin="10" Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}" />
-		<TextBlock Margin="10" Text="{Binding Input}" />
-		<Button Margin="10" Click="Button_Click" Content="プロパティの初期化" />
-		<TextBox Width="250" HorizontalAlignment="Center" Text="{Binding TestText, UpdateSourceTrigger=PropertyChanged}" behaviors:AutoCompleteBehavior.AutoCompleteItemsSource="{Binding TestItems}" />
-	</StackPanel>
+	<Grid x:Name="UiTest">
+		<cc:PartialSearchComboBox x:Name="PrefecturesComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" Height="32" Width="120" TextSearch.TextPath="Name">
+			<!-- 都道府県名の部分のみを表示するためのテンプレート -->
+			<cc:PartialSearchComboBox.ItemTemplate>
+				<DataTemplate>
+					<StackPanel Orientation="Horizontal">
+						<TextBlock Text="{Binding Name}"/>
+					</StackPanel>
+				</DataTemplate>
+			</cc:PartialSearchComboBox.ItemTemplate>
+		</cc:PartialSearchComboBox>
+	</Grid>
 </Window>
