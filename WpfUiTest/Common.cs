@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 
 namespace WpfUiTest
 {
-	class Candidates
+	internal class Common
 	{
-		public string Name { get; set; }
-		public string SecondName { get; set; }
+		public static void DebugEcho(string message)
+		{
+			System.Diagnostics.Debug.WriteLine(message);
+		}
 	}
 }

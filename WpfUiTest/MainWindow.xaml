@@ -7,16 +7,5 @@
 		xmlns:cc="clr-namespace:WpfUiTest"
         mc:Ignorable="d"
         Title="UiTest" Height="450" Width="800">
-	<Grid x:Name="UiTest">
-		<cc:PartialSearchComboBox x:Name="PrefecturesComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" Height="32" Width="120" TextSearch.TextPath="Name">
-			<!-- 都道府県名の部分のみを表示するためのテンプレート -->
-			<cc:PartialSearchComboBox.ItemTemplate>
-				<DataTemplate>
-					<StackPanel Orientation="Horizontal">
-						<TextBlock Text="{Binding Name}"/>
-					</StackPanel>
-				</DataTemplate>
-			</cc:PartialSearchComboBox.ItemTemplate>
-		</cc:PartialSearchComboBox>
-	</Grid>
+	<Grid x:Name="UiTest"/>
 </Window>

@@ -1,13 +1,13 @@
 ﻿<Window x:Class="ResourceUsageMonitor.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ResourceUsageMonitor"
+		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:local="clr-namespace:ResourceUsageMonitor"
 		xmlns:ig="http://schemas.infragistics.com/xaml"
-        xmlns:oxy="http://oxyplot.org/wpf"
-        mc:Ignorable="d"
-        Title="Resource Manager" Height="450" Width="800">
+		xmlns:oxy="http://oxyplot.org/wpf"
+		mc:Ignorable="d"
+		Title="Resource Manager" Height="450" Width="800">
 	<Grid>
 		<Label x:Name="LabelCpu" Content="Label" HorizontalAlignment="Left" VerticalAlignment="Top"/>
 		<TabControl x:Name="TabsCpu" SelectedItem="{Binding ElementName=TabPerCore, Mode=OneWay}" Margin="0,50,0,0">
@@ -22,10 +22,17 @@
 			</TabItem>
 			<TabItem x:Name="TabProcess" Header="Processes">
 				<Grid x:Name="TabGridProcess">
-					<TextBox x:Name="TextBoxProcess" TextChanged="TextBoxProcessTextChanged" HorizontalAlignment="Left" Height="23" Margin="10,10,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120"/>
-					<Button x:Name="buttonLowPriority" Click="ButtonLowPriorityClick"  Content="Low Priority" HorizontalAlignment="Left" Margin="146,12,0,0" VerticalAlignment="Top"/>
-					<Button x:Name="buttonTerminate" Click="ButtonTerminateClick" Content="Terminate" HorizontalAlignment="Left" Margin="226,12,0,0" VerticalAlignment="Top"/>
+					<TextBox x:Name="TextBoxProcess" TextChanged="TextBoxProcessTextChanged" HorizontalAlignment="Left" Height="22" Margin="277,97,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120"/>
+					<Button x:Name="buttonLowPriority" Click="ButtonLowPriorityClick"  Content="Low Priority" HorizontalAlignment="Left" Margin="482,97,0,0" VerticalAlignment="Top"/>
+					<Button x:Name="buttonTerminate" Click="ButtonTerminateClick" Content="Terminate" HorizontalAlignment="Left" Margin="412,97,0,0" VerticalAlignment="Top"/>
 					<Label x:Name="LabelProcessSearchresult" Content="" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top"/>
+					<Label Content="Lower the priority of some processes so that more CPU time is allocated to the processes you want to prioritize." HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+					<Label Content="Processes to Lower Priority" HorizontalAlignment="Left" Margin="10,41,0,0" VerticalAlignment="Top"/>
+					<ListView Margin="15,97,655,120" x:Name="LowerPriorityProcessListView">
+					</ListView>
+					<Button Content="+" FontSize="20" HorizontalAlignment="Left" Margin="86,241,0,0" VerticalAlignment="Top" RenderTransformOrigin="-3.294,-0.722" Click="OnAddProcessButtonClick"/>
+					<Button Content="-" FontSize="20" HorizontalAlignment="Left" Margin="121,241,0,0" VerticalAlignment="Top" RenderTransformOrigin="-3.294,-0.722" Click="OnDeleteProcessButtonClick"/>
+					<TextBox x:Name="TextBoxAddProcessToList" HorizontalAlignment="Left" Margin="19,288,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" />
 				</Grid>
 			</TabItem>
 		</TabControl>

@@ -5,6 +5,7 @@ using OxyPlot.Wpf;
 using System;
 using System.Diagnostics;
 using System.Management;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,7 +29,7 @@ namespace ResourceUsageMonitor
 			InitializeComponent();
 
 			cpuInfo = new(AllCpuPlotView, TabGridPerCore);
-			processInfo = new();
+			processInfo = new(LowerPriorityProcessListView);
 
 			// タイマーの設定
 			timer = new DispatcherTimer
@@ -57,19 +58,6 @@ namespace ResourceUsageMonitor
 			cpuInfo.OnWindowSizeChanged((int)TabGridPerCore.ActualWidth, (int)TabGridPerCore.ActualHeight);
 		}
 
-		private void SetCpuAffinity()
-		{
-			//すべてのプロセス
-			Process[] process;
-
-			//プロセスの取得
-			process = Process.GetProcesses();
-			foreach (Process p in process)
-			{
-				p.ProcessorAffinity = 0x00000001;
-			}
-		}
-
 		private void ButtonLowPriorityClick(object sender, RoutedEventArgs e)
 		{
 			processInfo?.SetPriorityLow(TextBoxProcess?.Text);
@@ -83,6 +71,16 @@ namespace ResourceUsageMonitor
 		private void TextBoxProcessTextChanged(object sender, TextChangedEventArgs e)
 		{
 			LabelProcessSearchresult.Content = processInfo?.SearchProcess(TextBoxProcess?.Text);
+		}
+
+		private void OnAddProcessButtonClick(object sender, RoutedEventArgs e)
+		{
+			processInfo.OnAddProcess(sender, e, TextBoxAddProcessToList.Text);
+		}
+
+		private void OnDeleteProcessButtonClick(object sender, RoutedEventArgs e)
+		{
+			processInfo.OnDeleteProcess(sender, e);
 		}
 	}
 }
