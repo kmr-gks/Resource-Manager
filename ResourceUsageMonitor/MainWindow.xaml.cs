@@ -3,6 +3,8 @@ using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.Wpf;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Management;
 using System.Runtime.CompilerServices;
@@ -23,10 +25,17 @@ namespace ResourceUsageMonitor
 		private readonly int maxDataCount = 60; // 60秒分のデータを表示する
 		private readonly CpuInfo cpuInfo;
 		private readonly ProcessInfo processInfo;
+		public static ObservableCollection<LowProcessListItem>? Items;
 
 		public MainWindow()
 		{
 			InitializeComponent();
+			Items = new ObservableCollection<LowProcessListItem>
+			{
+				new() { Name = "chrome.exe", },
+				new() { Name = "explorer.exe" },
+			};
+			lvw.ItemsSource = Items;
 
 			cpuInfo = new(AllCpuPlotView, TabGridPerCore);
 			processInfo = new(LowerPriorityProcessListView);
@@ -82,5 +91,10 @@ namespace ResourceUsageMonitor
 		{
 			processInfo.OnDeleteProcess(sender, e);
 		}
+	}
+
+	public class LowProcessListItem
+	{
+		public string Name { get; set; }
 	}
 }

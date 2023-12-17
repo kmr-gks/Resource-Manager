@@ -16,6 +16,7 @@ namespace ResourceUsageMonitor
 		{
 			processNamesToLowerPriority.Add(processName);
 			LowerPriorityProcessListView.ItemsSource = processNamesToLowerPriority;
+			MainWindow.Items.Add(new LowProcessListItem { Name = "ADD" });
 		}
 		public void OnDeleteProcess(object sender, RoutedEventArgs e)
 		{
@@ -29,7 +30,7 @@ namespace ResourceUsageMonitor
 			processNamesToLowerPriority.Add("chrome.exe");
 			processNamesToLowerPriority.Add("explorer.exe");
 
-			LowerPriorityProcessListView.ItemsSource = processNamesToLowerPriority;
+			//LowerPriorityProcessListView.ItemsSource = processNamesToLowerPriority;
 		}
 
 		private string TrimExeExtension(string fileName)
