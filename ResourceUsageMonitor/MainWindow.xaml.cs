@@ -1,13 +1,5 @@
-﻿using OxyPlot;
-using OxyPlot.Axes;
-using OxyPlot.Series;
-using OxyPlot.Wpf;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Management;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,12 +12,14 @@ namespace ResourceUsageMonitor
 	/// </summary>
 	public partial class MainWindow : Window
 	{
+		//優先度を下げるプロセスのリスト
+		public readonly ObservableCollection<LowProcessListItem> Items;
+
 		private readonly DispatcherTimer timer;
 		private int sec = 0;
 		private readonly int maxDataCount = 60; // 60秒分のデータを表示する
 		private readonly CpuInfo cpuInfo;
 		private readonly ProcessInfo processInfo;
-		public static ObservableCollection<LowProcessListItem>? Items;
 
 		public MainWindow()
 		{
@@ -35,10 +29,9 @@ namespace ResourceUsageMonitor
 				new() { Name = "chrome.exe", },
 				new() { Name = "explorer.exe" },
 			};
-			lvw.ItemsSource = Items;
+			LowerPriorityProcessListView.ItemsSource = Items;
 
 			cpuInfo = new(AllCpuPlotView, TabGridPerCore);
-			processInfo = new(LowerPriorityProcessListView);
 
 			// タイマーの設定
 			timer = new DispatcherTimer
@@ -52,6 +45,10 @@ namespace ResourceUsageMonitor
 
 			//最初のウィンドウの大きさに応じてグラフの大きさを変更する。(OnWindowSizeChangedと同じ内容)
 			Loaded += new RoutedEventHandler((sender, e) => { OnWindowSizeChanged(null, null); });
+
+			//プロセスタブ
+			processInfo = new();
+
 
 			using var tokenSource = new CancellationTokenSource();
 		}
@@ -69,7 +66,7 @@ namespace ResourceUsageMonitor
 
 		private void ButtonLowPriorityClick(object sender, RoutedEventArgs e)
 		{
-			processInfo?.SetPriorityLow(TextBoxProcess?.Text);
+			processInfo?.SetPriorityLow(TextBoxProcess.Text);
 		}
 
 		private void ButtonTerminateClick(object sender, RoutedEventArgs e)
@@ -79,15 +76,15 @@ namespace ResourceUsageMonitor
 
 		private void TextBoxProcessTextChanged(object sender, TextChangedEventArgs e)
 		{
-			LabelProcessSearchresult.Content = processInfo?.SearchProcess(TextBoxProcess?.Text);
+			LabelProcessSearchresult.Content = processInfo?.SearchProcess(TextBoxProcess.Text);
 		}
 
-		private void OnAddProcessButtonClick(object sender, RoutedEventArgs e)
+		private void AddProcessButtonClick(object sender, RoutedEventArgs e)
 		{
 			processInfo.OnAddProcess(sender, e, TextBoxAddProcessToList.Text);
 		}
 
-		private void OnDeleteProcessButtonClick(object sender, RoutedEventArgs e)
+		private void DeleteProcessButtonClick(object sender, RoutedEventArgs e)
 		{
 			processInfo.OnDeleteProcess(sender, e);
 		}

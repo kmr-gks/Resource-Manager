@@ -25,14 +25,13 @@
 					<TextBox x:Name="TextBoxProcess" TextChanged="TextBoxProcessTextChanged" HorizontalAlignment="Left" Height="22" Margin="277,97,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120"/>
 					<Button x:Name="buttonLowPriority" Click="ButtonLowPriorityClick"  Content="Low Priority" HorizontalAlignment="Left" Margin="482,97,0,0" VerticalAlignment="Top"/>
 					<Button x:Name="buttonTerminate" Click="ButtonTerminateClick" Content="Terminate" HorizontalAlignment="Left" Margin="412,97,0,0" VerticalAlignment="Top"/>
-					<Label x:Name="LabelProcessSearchresult" Content="" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top"/>
+					<Label x:Name="LabelProcessSearchresult" Content="" HorizontalAlignment="Left" Margin="277,124,0,0" VerticalAlignment="Top" Width="191"/>
 					<Label Content="Lower the priority of some processes so that more CPU time is allocated to the processes you want to prioritize." HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
 					<Label Content="Processes to Lower Priority" HorizontalAlignment="Left" Margin="10,41,0,0" VerticalAlignment="Top"/>
-					<ListView Margin="15,97,655,120" x:Name="LowerPriorityProcessListView" ItemsSource="{Binding LowerPriorityProcessList}"/>
-					<Button Content="+" FontSize="20" HorizontalAlignment="Left" Margin="86,241,0,0" VerticalAlignment="Top" RenderTransformOrigin="-3.294,-0.722" Click="OnAddProcessButtonClick"/>
-					<Button Content="-" FontSize="20" HorizontalAlignment="Left" Margin="121,241,0,0" VerticalAlignment="Top" RenderTransformOrigin="-3.294,-0.722" Click="OnDeleteProcessButtonClick"/>
+					<Button Content="+" FontSize="20" HorizontalAlignment="Left" Margin="86,241,0,0" VerticalAlignment="Top" RenderTransformOrigin="-3.294,-0.722" Click="AddProcessButtonClick"/>
+					<Button Content="-" FontSize="20" HorizontalAlignment="Left" Margin="121,241,0,0" VerticalAlignment="Top" RenderTransformOrigin="-3.294,-0.722" Click="DeleteProcessButtonClick"/>
 					<TextBox x:Name="TextBoxAddProcessToList" HorizontalAlignment="Left" Margin="19,288,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" />
-					<ListView Margin="232,178,147,42" Name="lvw">
+					<ListView Margin="15,97,655,120" Name="LowerPriorityProcessListView">
 						<ListView.View>
 							<GridView>
 								<GridViewColumn  Width="150" DisplayMemberBinding="{Binding Name}" Header="Name" />

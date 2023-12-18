@@ -1,36 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace ResourceUsageMonitor
 {
 	internal class ProcessInfo
 	{
 		private static readonly int coreCount = Environment.ProcessorCount;
-		private readonly List<string> processNamesToLowerPriority = new List<string>();
-		private readonly ListView LowerPriorityProcessListView;
+		private MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
 
 		public void OnAddProcess(object sender, RoutedEventArgs e, string processName)
 		{
-			processNamesToLowerPriority.Add(processName);
-			LowerPriorityProcessListView.ItemsSource = processNamesToLowerPriority;
-			MainWindow.Items.Add(new LowProcessListItem { Name = "ADD" });
+			mainWindow.Items.Add(new LowProcessListItem { Name = TrimExeExtension(processName) + ".exe" });
 		}
 		public void OnDeleteProcess(object sender, RoutedEventArgs e)
 		{
-			processNamesToLowerPriority.RemoveAt(LowerPriorityProcessListView.SelectedIndex);
-			LowerPriorityProcessListView.ItemsSource = processNamesToLowerPriority;
+			try
+			{
+				mainWindow.Items.RemoveAt(mainWindow.LowerPriorityProcessListView.SelectedIndex);
+			}
+			catch (Exception)
+			{
+				MessageBox.Show("削除するプロセスを選択してください。");
+			}
 		}
 
-		public ProcessInfo(ListView LowerPriorityProcessListView)
+		public ProcessInfo()
 		{
-			this.LowerPriorityProcessListView = LowerPriorityProcessListView;
-			processNamesToLowerPriority.Add("chrome.exe");
-			processNamesToLowerPriority.Add("explorer.exe");
-
-			//LowerPriorityProcessListView.ItemsSource = processNamesToLowerPriority;
 		}
 
 		private string TrimExeExtension(string fileName)
@@ -43,7 +39,12 @@ namespace ResourceUsageMonitor
 
 		public string SearchProcess(string processName)
 		{
+			if (string.IsNullOrEmpty(processName))
+			{
+				return "Please input process name.";
+			}
 			processName = TrimExeExtension(processName);
+			//GetProcessesByNameは、拡張子を削除したプロセス名で検索する。
 			var processes = Process.GetProcessesByName(processName);
 			var result = processes.Length switch
 			{
