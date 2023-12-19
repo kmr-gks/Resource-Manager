@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace ResourceUsageMonitor
 {
@@ -9,9 +10,9 @@ namespace ResourceUsageMonitor
 		private static readonly int coreCount = Environment.ProcessorCount;
 		private MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
 
-		public void OnAddProcess(object sender, RoutedEventArgs e, string processName)
+		public void OnAddProcess(object sender, RoutedEventArgs e)
 		{
-			mainWindow.Items.Add(new LowProcessListItem { Name = TrimExeExtension(processName) + ".exe" });
+			mainWindow.Items.Add(new LowProcessListItem { Name = TrimExeExtension(mainWindow.TextBoxAddProcessToList.Text) + ".exe" });
 		}
 		public void OnDeleteProcess(object sender, RoutedEventArgs e)
 		{
@@ -37,11 +38,13 @@ namespace ResourceUsageMonitor
 			return fileName;
 		}
 
-		public string SearchProcess(string processName)
+		public void SearchProcess(object sender, TextChangedEventArgs e)
 		{
+			var processName = mainWindow.TextBoxOneProcess.Text;
 			if (string.IsNullOrEmpty(processName))
 			{
-				return "Please input process name.";
+				mainWindow.LabelProcessSearchresult.Content = "Please input process name.";
+				return;
 			}
 			processName = TrimExeExtension(processName);
 			//GetProcessesByNameは、拡張子を削除したプロセス名で検索する。
@@ -52,11 +55,12 @@ namespace ResourceUsageMonitor
 				1 => $"A process found(id:{processes[0].Id}).",
 				_ => $"{processes.Length} processes found.",
 			};
-			return result;
+			mainWindow.LabelProcessSearchresult.Content = result;
 		}
-		public void SetPriorityLow(string processName)
+
+		public void SetPriorityLow(object sender, RoutedEventArgs e)
 		{
-			processName = TrimExeExtension(processName);
+			var processName = TrimExeExtension(mainWindow.TextBoxOneProcess.Text);
 			var processes = Process.GetProcessesByName(processName);
 			foreach (var process in processes)
 			{
@@ -74,9 +78,9 @@ namespace ResourceUsageMonitor
 			}
 		}
 
-		public void Terminate(string processName)
+		public void Terminate(object sender, RoutedEventArgs e)
 		{
-			processName = TrimExeExtension(processName);
+			var processName = TrimExeExtension(mainWindow.TextBoxOneProcess.Text);
 			var processes = Process.GetProcessesByName(processName);
 			foreach (var process in processes)
 			{

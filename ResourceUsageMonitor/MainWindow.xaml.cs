@@ -36,9 +36,13 @@ namespace ResourceUsageMonitor
 			// タイマーの設定
 			timer = new DispatcherTimer
 			{
-				Interval = TimeSpan.FromSeconds(1)
+				Interval = TimeSpan.FromSeconds(1),
 			};
-			timer.Tick += ResourceUsageMonitor_Tick;
+			timer.Tick += (sender, e) => {
+				//タイマーで一秒経過したときの処理
+				sec++;
+				cpuInfo.Update(LabelCpu, maxDataCount, sec);
+			};
 			timer.Start();
 
 			SizeChanged += OnWindowSizeChanged;
@@ -48,50 +52,23 @@ namespace ResourceUsageMonitor
 
 			//プロセスタブ
 			processInfo = new();
-
+			LowPriorityButton.Click += processInfo.SetPriorityLow;
+			TerminateButton.Click += processInfo.Terminate;
+			AddProcessButton.Click += processInfo.OnAddProcess;
+			DeleteProcessButton.Click += processInfo.OnDeleteProcess;
+			TextBoxOneProcess.TextChanged += processInfo.SearchProcess;
 
 			using var tokenSource = new CancellationTokenSource();
-		}
-
-		private void ResourceUsageMonitor_Tick(object? sender, EventArgs e)
-		{
-			sec++;
-			cpuInfo.Update(LabelCpu, maxDataCount, sec);
 		}
 
 		private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs? e)
 		{
 			cpuInfo.OnWindowSizeChanged((int)TabGridPerCore.ActualWidth, (int)TabGridPerCore.ActualHeight);
 		}
-
-		private void ButtonLowPriorityClick(object sender, RoutedEventArgs e)
-		{
-			processInfo?.SetPriorityLow(TextBoxProcess.Text);
-		}
-
-		private void ButtonTerminateClick(object sender, RoutedEventArgs e)
-		{
-			processInfo.Terminate(TextBoxProcess.Text);
-		}
-
-		private void TextBoxProcessTextChanged(object sender, TextChangedEventArgs e)
-		{
-			LabelProcessSearchresult.Content = processInfo?.SearchProcess(TextBoxProcess.Text);
-		}
-
-		private void AddProcessButtonClick(object sender, RoutedEventArgs e)
-		{
-			processInfo.OnAddProcess(sender, e, TextBoxAddProcessToList.Text);
-		}
-
-		private void DeleteProcessButtonClick(object sender, RoutedEventArgs e)
-		{
-			processInfo.OnDeleteProcess(sender, e);
-		}
 	}
 
 	public class LowProcessListItem
 	{
-		public string Name { get; set; }
+		public required string Name { get; set; }
 	}
 }
