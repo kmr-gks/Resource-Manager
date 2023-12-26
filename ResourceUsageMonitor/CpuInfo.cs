@@ -1,22 +1,21 @@
-﻿using OxyPlot.Series;
+﻿using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
 using OxyPlot.Wpf;
-using OxyPlot;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Management;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using OxyPlot.Axes;
 using System.Windows;
-using System.Linq.Expressions;
+using System.Windows.Controls;
 
 namespace ResourceUsageMonitor
 {
 	internal class CpuInfo
 	{
+		//メインウィンドウ
+		private readonly MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
+
 		//CPU名
 		public readonly string cpuName;
 
@@ -27,16 +26,16 @@ namespace ResourceUsageMonitor
 		private readonly int columnCount, rowCount;
 
 		//CPU使用率を取得するためのカウンタ
-		public readonly PerformanceCounter cpuOverallUsageCounter;
-		public readonly PerformanceCounter[] coreUsageCounter;
+		public readonly PerformanceCounter cpuOverallUsageCounter = GetCpuUsageCounter();
+		public readonly List<PerformanceCounter> coreUsageCounter = new();
 
 		//CPU周波数の倍率を取得するためのカウンタ
-		public readonly PerformanceCounter cpuOverallPercentCounter;
-		public readonly PerformanceCounter[] corePercentCounter;
+		public readonly PerformanceCounter cpuOverallPercentCounter = GetCpuPercentCounter();
+		public readonly List<PerformanceCounter> corePercentCounter = new();
 
 		//CPUの基本周波数を取得するためのカウンタ
-		public readonly PerformanceCounter cpuOverallBaseHzCounter;
-		public readonly PerformanceCounter[] coreBaseHzCounter;
+		public readonly PerformanceCounter cpuOverallBaseHzCounter = GetCpuBaseHzCounter();
+		public readonly List<PerformanceCounter> coreBaseHzCounter = new();
 
 		//カウンタ名に使用する文字列
 		private const string processorInformation = "Processor Information";
@@ -53,41 +52,19 @@ namespace ResourceUsageMonitor
 		private readonly Label[] usageLabel;
 
 		private readonly double[] cpuUsageArray;
+		private double overallGhz;
+		private readonly List<double> coreGhz;
 
-
-		public CpuInfo(PlotView allCpuPlotView, Grid tabGridPerCore)
+		public CpuInfo()
 		{
 			columnCount = GetColumn(coreCount);
 			rowCount = (int)Math.Ceiling((double)coreCount / columnCount);
 
-			//CPU使用率を取得するためのカウンタの準備
-			cpuOverallUsageCounter = getCpuUsageCounter();
-			cpuOverallUsageCounter.NextValue();
-			coreUsageCounter = new PerformanceCounter[coreCount];
 			for (int i = 0; i < coreCount; i++)
 			{
-				coreUsageCounter[i] = getCpuUsageCounter(i);
-				coreUsageCounter[i].NextValue();
-			}
-
-			//CPU周波数を取得するためのカウンタの準備
-			cpuOverallPercentCounter = getCpuPercentCounter();
-			cpuOverallPercentCounter.NextValue();
-			corePercentCounter = new PerformanceCounter[coreCount];
-			for (int i = 0; i < coreCount; i++)
-			{
-				corePercentCounter[i] = getCpuPercentCounter(i);
-				corePercentCounter[i].NextValue();
-			}
-
-			//CPUの基本周波数を取得するためのカウンタの準備
-			cpuOverallBaseHzCounter = getCpuBaseHzCounter();
-			cpuOverallBaseHzCounter.NextValue();
-			coreBaseHzCounter = new PerformanceCounter[coreCount];
-			for (int i = 0; i < coreCount; i++)
-			{
-				coreBaseHzCounter[i] = getCpuBaseHzCounter(i);
-				coreBaseHzCounter[i].NextValue();
+				coreUsageCounter.Add(GetCpuUsageCounter(i));
+				corePercentCounter.Add(GetCpuPercentCounter(i));
+				coreBaseHzCounter.Add(GetCpuBaseHzCounter(i));
 			}
 
 			//CPU名を取得する
@@ -123,7 +100,7 @@ namespace ResourceUsageMonitor
 
 			plotModelOverall.Series.Add(lineSeriesOverall);
 
-			allCpuPlotView.Model = plotModelOverall;
+			mainWindow.AllCpuPlotView.Model = plotModelOverall;
 
 			for (int i = 0; i < coreCount; i++)
 			{
@@ -161,8 +138,7 @@ namespace ResourceUsageMonitor
 					Name = "plotView" + "Core" + i,
 					Model = coreGraphPlotModel[i],
 				};
-				tabGridPerCore.Children.Add(corePlotView[i]);
-
+				mainWindow.TabGridPerCore.Children.Add(corePlotView[i]);
 
 				//コアごとの使用率を表示するラベルを動的に追加
 				usageLabel[i] = new Label()
@@ -171,9 +147,10 @@ namespace ResourceUsageMonitor
 					Content = "Core" + i + " " + (int)cpuUsageArray[i] + "%",
 					HorizontalContentAlignment = System.Windows.HorizontalAlignment.Center,
 				};
-
-				tabGridPerCore.Children.Add(usageLabel[i]);
+				mainWindow.TabGridPerCore.Children.Add(usageLabel[i]);
 			}
+			coreGhz = new(new double[coreCount]);
+			SaveAllCpuValue();
 		}
 
 		//一行に表示するコアのグラフの数を返す
@@ -188,7 +165,7 @@ namespace ResourceUsageMonitor
 		}
 
 		//CPU使用率を取得するためのカウンタを取得する。引数を省略すると全体の使用率のカウンタを返す。
-		public static PerformanceCounter getCpuUsageCounter(int core = -1)
+		public static PerformanceCounter GetCpuUsageCounter(int core = -1)
 		{
 			const string counterName = "% Processor Time";
 			if (core == -1)
@@ -198,7 +175,7 @@ namespace ResourceUsageMonitor
 		}
 
 		//CPU周波数(の倍率)を取得するためのカウンタを取得する。引数を省略すると全体の周波数のカウンタを返す。
-		public static PerformanceCounter getCpuPercentCounter(int core = -1)
+		public static PerformanceCounter GetCpuPercentCounter(int core = -1)
 		{
 			const string counterName = "% Processor Performance";
 			if (core == -1)
@@ -208,7 +185,7 @@ namespace ResourceUsageMonitor
 		}
 
 		//CPUの基本周波数を取得するカウンターを返す。引数を省略すると全体の基本周波数のカウンタを返す。
-		public static PerformanceCounter getCpuBaseHzCounter(int core = -1)
+		public static PerformanceCounter GetCpuBaseHzCounter(int core = -1)
 		{
 			const string counterName = "Processor Frequency";
 			if (core == -1)
@@ -229,7 +206,7 @@ namespace ResourceUsageMonitor
 			return "";
 		}
 
-		public void Update(Label LabelCpu, int maxDataCount, int sec)
+		private void SaveAllCpuValue()
 		{
 			//全体,コアごとの使用率を取得する
 			cpuUsageArray[coreCount] = cpuOverallUsageCounter.NextValue();
@@ -238,8 +215,17 @@ namespace ResourceUsageMonitor
 				cpuUsageArray[i] = coreUsageCounter[i].NextValue();
 			}
 			//全体の周波数を取得する。
-			var ghz = cpuOverallPercentCounter.NextValue() * cpuOverallBaseHzCounter.NextValue() / 100 / 1000;
-			LabelCpu.Content = "CPU " + cpuName + " " + (int)cpuUsageArray[coreCount] + "% " + ghz.ToString("F2") + "GHz";
+			overallGhz = cpuOverallPercentCounter.NextValue() * cpuOverallBaseHzCounter.NextValue() / 100 / 1000;
+			for (int i = 0; i < coreCount; i++)
+			{
+				coreGhz[i] = corePercentCounter[i].NextValue() * coreBaseHzCounter[i].NextValue() / 100 / 1000;
+			}
+		}
+
+		public void Update(int maxDataCount, int sec)
+		{
+			SaveAllCpuValue();
+			mainWindow.LabelCpu.Content = "CPU " + cpuName + " " + (int)cpuUsageArray[coreCount] + "% " + overallGhz.ToString("F2") + "GHz";
 			//データ数が maxDataCount を超えたらデキューしていく
 			if (lineSeriesOverall.Points.Count > maxDataCount)
 			{
@@ -262,15 +248,16 @@ namespace ResourceUsageMonitor
 				coreGraphPlotModel[i].InvalidatePlot(true);
 
 				//使用率を表示するラベルを更新する
-				var ghz2 = corePercentCounter[i].NextValue() * coreBaseHzCounter[i].NextValue() / 100 / 1000;
-				usageLabel[i].Content = "コア" + i + "\n" + (int)cpuUsageArray[i] + "%\n" + ghz2.ToString("F2") + "GHz";
+				usageLabel[i].Content = "コア" + i + "\n" + (int)cpuUsageArray[i] + "%\n" + coreGhz[i].ToString("F2") + "GHz";
 			}
 		}
 
-		public void OnWindowSizeChanged(int tabGridWidth, int tabGridHeight)
+		public void OnWindowSizeChanged(object? sender, SizeChangedEventArgs? e)
 		{
-			//ラムダ式
-			Func<double, double, double, double, Thickness> LeftTopWidthHeightToMargin = (left, top, width, height) => new Thickness(left, top, tabGridWidth - left - width, tabGridHeight - top - height);
+			var tabGridWidth = mainWindow.TabGridPerCore.ActualWidth;
+			var tabGridHeight = mainWindow.TabGridPerCore.ActualHeight;
+			//ローカル関数
+			Thickness LeftTopWidthHeightToMargin(double left, double top, double width, double height) => new(left, top, tabGridWidth - left - width, tabGridHeight - top - height);
 
 			//ウィンドウサイズが変更されたらグラフのサイズも変更する
 			for (int i = 0; i < coreCount; i++)

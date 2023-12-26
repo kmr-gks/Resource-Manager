@@ -8,11 +8,11 @@ namespace ResourceUsageMonitor
 	internal class ProcessInfo
 	{
 		private static readonly int coreCount = Environment.ProcessorCount;
-		private MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
+		private readonly MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
 
 		public void OnAddProcess(object sender, RoutedEventArgs e)
 		{
-			mainWindow.Items.Add(new LowProcessListItem { Name = TrimExeExtension(mainWindow.TextBoxAddProcessToList.Text) + ".exe" });
+			mainWindow.Items.Add(new(TrimExeExtension(mainWindow.TextBoxAddProcessToList.Text) + ".exe"));
 		}
 		public void OnDeleteProcess(object sender, RoutedEventArgs e)
 		{
@@ -30,11 +30,11 @@ namespace ResourceUsageMonitor
 		{
 		}
 
-		private string TrimExeExtension(string fileName)
+		private static string TrimExeExtension(string fileName)
 		{
 			var index = fileName.LastIndexOf(".exe");
 			if (index > 0)
-				fileName = fileName.Substring(0, index);
+				fileName = fileName[..index];
 			return fileName;
 		}
 

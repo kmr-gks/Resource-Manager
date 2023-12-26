@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace ResourceUsageMonitor
@@ -26,29 +25,30 @@ namespace ResourceUsageMonitor
 			InitializeComponent();
 			Items = new ObservableCollection<LowProcessListItem>
 			{
-				new() { Name = "chrome.exe", },
-				new() { Name = "explorer.exe" },
+				new("chrome.exe") ,
+				new("explorer.exe"),
 			};
 			LowerPriorityProcessListView.ItemsSource = Items;
 
-			cpuInfo = new(AllCpuPlotView, TabGridPerCore);
-
+			//CPUタブ
+			cpuInfo = new();
 			// タイマーの設定
 			timer = new DispatcherTimer
 			{
 				Interval = TimeSpan.FromSeconds(1),
 			};
-			timer.Tick += (sender, e) => {
+			timer.Tick += (sender, e) =>
+			{
 				//タイマーで一秒経過したときの処理
 				sec++;
-				cpuInfo.Update(LabelCpu, maxDataCount, sec);
+				cpuInfo.Update(maxDataCount, sec);
 			};
 			timer.Start();
 
-			SizeChanged += OnWindowSizeChanged;
+			SizeChanged += cpuInfo.OnWindowSizeChanged;
 
 			//最初のウィンドウの大きさに応じてグラフの大きさを変更する。(OnWindowSizeChangedと同じ内容)
-			Loaded += new RoutedEventHandler((sender, e) => { OnWindowSizeChanged(null, null); });
+			Loaded += new RoutedEventHandler((sender, e) => { cpuInfo.OnWindowSizeChanged(sender, null); });
 
 			//プロセスタブ
 			processInfo = new();
@@ -60,15 +60,14 @@ namespace ResourceUsageMonitor
 
 			using var tokenSource = new CancellationTokenSource();
 		}
-
-		private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs? e)
-		{
-			cpuInfo.OnWindowSizeChanged((int)TabGridPerCore.ActualWidth, (int)TabGridPerCore.ActualHeight);
-		}
 	}
 
 	public class LowProcessListItem
 	{
-		public required string Name { get; set; }
+		public string Name { get; }
+		public LowProcessListItem(string name)
+		{
+			Name = name;
+		}
 	}
 }
